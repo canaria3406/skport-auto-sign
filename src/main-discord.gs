@@ -51,7 +51,7 @@ function autoSignFunction({
 
   urlsnheaders.push({ 
     url: urlDict.Endfield, 
-    headers: { ...headerDict["default"], "cred": SK_OAUTH_CRED_KEY, "sk-game-role": `3_${id}_${server}`, "sk-language": language, }
+    headers: { ...headerDict["default"], "cred": SK_OAUTH_CRED_KEY, "sk-game-role": `3_${id}_${server}`, "sk-language": language, "timestamp": String(Math.floor(Date.now() / 1000)) }
   });
 
   const options = {
