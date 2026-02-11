@@ -25,6 +25,17 @@ const headerDict = {
     'Accept-Encoding': 'gzip, deflate, br, zstd',
     'Content-Type': 'application/json',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0',
+    'Referer': 'https://game.skport.com/',
+    'platform': '3',
+    'vName': '1.0.0',
+    'Origin': 'https://game.skport.com',
+    'Connection': 'keep-alive',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'same-site',
+    'Priority': 'u=0',
+    'Content-Length': '0',
+    'TE': 'trailers',
   },
 }
 
