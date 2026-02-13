@@ -156,3 +156,4 @@ const telegramBotToken = "6XXXXXXXXX:AAAAAAAAAAXXXXXXXXXX8888888888Peko"
 
 ## Changelog
 2026-01-29 專案公開
+2026-02-14 修正錯誤，感謝 Keit(@keit32) 的協助

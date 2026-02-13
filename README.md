@@ -20,7 +20,7 @@ Supports **Arknights:Endfield**. Support multiple accounts.
 
 ## Setup
 1. Go to [Google Apps Script](https://script.google.com/home/start) and create a new project with your custom name.
-2. Select the editor and paste the code( [Discord version](https://github.com/canaria3406/skport-auto-sign/blob/main/src/main-discord.gs) / ~~Telegram version~~ ). Refer to the instructions below to configure the config file and save it.
+2. Select the editor and paste the code( [Discord version](https://github.com/canaria3406/skport-auto-sign/blob/main/src/main-discord.gs) / [Telegram version](https://github.com/canaria3406/skport-auto-sign/blob/main/src/main-telegram.gs) ). Refer to the instructions below to configure the config file and save it.
 3. Select "main" and click the "Run" button at the top.
    Grant the necessary permissions and confirm that the configuration is correct (Execution started > completed).
 4. Click the trigger button on the left side and add a new trigger.
@@ -158,3 +158,4 @@ If you have already check in today, it will give a notify.
 
 ## Changelog
 2026-01-29 Project launched.
+2026-02-14 Bug fixed. Thanks to Keit(@keit32) for the help.

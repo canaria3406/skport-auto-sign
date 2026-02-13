@@ -17,3 +17,15 @@ if (document.cookie.includes('SK_OAUTH_CRED_KEY=')) {
 
 let ask = confirm(cred + '\n\nPress enter, then paste the token into your Google Apps Script Project');
 let msg = ask ? cred : 'Cancel';
+console.log('SK_OAUTH_CRED_KEY:');
+console.log(msg);
+
+let token = 'Error';
+if (localStorage.getItem('SK_TOKEN_CACHE_KEY')) {
+  token = localStorage.getItem('SK_TOKEN_CACHE_KEY');
+}
+
+let ask2 = confirm(token + '\n\nPress enter, then paste the token into your Google Apps Script Project');
+let msg2 = ask2 ? token : 'Cancel';
+console.log('SK_TOKEN_CACHE_KEY:');
+console.log(msg2);

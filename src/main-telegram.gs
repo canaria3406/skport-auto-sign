@@ -9,9 +9,9 @@ const profiles = [
   }
 ];
 
-const discord_notify = true
-const myDiscordID = ""
-const discordWebhook = ""
+const telegram_notify = false
+const myTelegramID = ""
+const telegramBotToken = ""
 
 /** The above is the config. Please refer to the instructions on https://github.com/canaria3406/skport-auto-sign for configuration. **/
 /** The following is the script code. Please DO NOT modify. **/
@@ -53,13 +53,9 @@ function generateSign(path, timestamp, token) {
 async function main() {
   const messages = profiles.map(autoSignFunction);
   const skportResp = `${messages.join('\n\n')}`;
-  if (discord_notify && discordWebhook) {
+  if (telegram_notify && telegramBotToken && myTelegramID) {
     postWebhook(skportResp);
   }
-}
-
-function discordPing() {
-  return myDiscordID ? `<@${myDiscordID}> ` : '';
 }
 
 function autoSignFunction({ SK_OAUTH_CRED_KEY, SK_TOKEN_CACHE_KEY, id, server, language = "en", accountName }) {
@@ -81,10 +77,9 @@ function autoSignFunction({ SK_OAUTH_CRED_KEY, SK_TOKEN_CACHE_KEY, id, server, l
 
   let response = `Check-in completed for ${accountName}`;
   if (responseJson.code === 10000) {
-    response += `\nEndfield: ${discordPing()}⚠️ Token expired! \nPlease update SK_TOKEN_CACHE_KEY in your config.`;
+    response += `\nEndfield: ⚠️ Token expired! \nPlease update SK_TOKEN_CACHE_KEY in your config.`;
   } else {
-    const isError = responseJson.message !== "OK";
-    response += `\nEndfield: ${isError ? discordPing() : ''}${responseJson.message}`;
+    response += `\nEndfield: ${responseJson.message}`;
   }
 
   return response;
@@ -92,9 +87,9 @@ function autoSignFunction({ SK_OAUTH_CRED_KEY, SK_TOKEN_CACHE_KEY, id, server, l
 
 function postWebhook(data) {
   let payload = JSON.stringify({
-    'username': 'auto-sign',
-    'avatar_url': 'https://i.imgur.com/TguAOiA.png',
-    'content': data
+    'chat_id': myTelegramID,
+    'text': data,
+    'parse_mode': 'HTML'
   });
 
   const options = {
@@ -104,5 +99,5 @@ function postWebhook(data) {
     muteHttpExceptions: true
   };
 
-  UrlFetchApp.fetch(discordWebhook, options);
+  UrlFetchApp.fetch('https://api.telegram.org/bot' + telegramBotToken + '/sendMessage', options);
 }
