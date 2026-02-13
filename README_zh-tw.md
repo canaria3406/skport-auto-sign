@@ -34,6 +34,7 @@ skport自動簽到script，每月約可自動領取260石，堪比蚊子腿。
 const profiles = [
   {
     SK_OAUTH_CRED_KEY: "", // your skport SK_OAUTH_CRED_KEY in cookie
+    SK_TOKEN_CACHE_KEY: "", // your SK_TOKEN_CACHE_KEY in localStorage
     id: "", // your Endfield game id
     server: "2", // Asia=2 Americas/Europe=3
     language: "en", // english=en 日本語=ja 繁體中文=zh_Hant 简体中文=zh_Hans 한국어=ko Русский=ru_RU
