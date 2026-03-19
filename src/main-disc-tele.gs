@@ -1,7 +1,7 @@
 const profiles = [
   {
     SK_OAUTH_CRED_KEY: "",  // your skport SK_OAUTH_CRED_KEY in cookie
-    SK_TOKEN_CACHE_KEY: "", // your SK_TOKEN_CACHE_KEY in localStorage (optional and still buggy)
+    SK_TOKEN_CACHE_KEY: "", // [OPTIONAL] Leave blank — the script auto-acquires and refreshes this token
     id: "",                 // your Endfield in-game id
     server: "2",            // Asia=2  Americas/Europe=3
     language: "en",         // en | ja | zh_Hant | zh_Hans | ko | ru_RU
@@ -11,7 +11,6 @@ const profiles = [
 
 // Discord notification config
 const discord_notify = true;
-const myDiscordID = "";
 const discordWebhook = "";
 
 // Telegram notification config
@@ -183,7 +182,7 @@ function autoSign(profile) {
       } else {
         return { 
           name: name, 
-          status: "⚠️ OAuth Key Expired!\nPlease re-login manually to get a new SK_OAUTH_CRED_KEY:\n\nhttps://game.skport.com/endfield/sign-in\n\nScript: YOUR_GET_TOKEN_GITHUB_LINK_HERE", 
+          status: "⚠️ OAuth Key Expired!\nPlease re-login manually to get a new SK_OAUTH_CRED_KEY:\n\nhttps://game.skport.com/endfield/sign-in\n\nScript: https://github.com/NatsumeAoii/skport-auto-signin/blob/main/src/getToken.js", 
           ok: false, 
           time: nowStamp 
         };
@@ -254,11 +253,11 @@ function autoSign(profile) {
 
       var msg = json.message || "Unknown response";
       if (msg === "User is not logged in") {
-        msg += " or your OAuth key is expired!\nPlease re-login manually to get a new SK_OAUTH_CRED_KEY:\n\nhttps://game.skport.com/endfield/sign-in\n\nScript: YOUR_GET_TOKEN_GITHUB_LINK_HERE";
+        msg += " or your OAuth key is expired!\nPlease re-login manually to get a new SK_OAUTH_CRED_KEY:\n\nhttps://game.skport.com/endfield/sign-in\n\nScript: https://github.com/NatsumeAoii/skport-auto-signin/blob/main/src/getToken.js";
       }
 
       var status = isExpired
-        ? "⚠️ OAuth Key Expired!\nPlease re-login manually to get a new SK_OAUTH_CRED_KEY:\n\nhttps://game.skport.com/endfield/sign-in\n\nScript: YOUR_GET_TOKEN_GITHUB_LINK_HERE"
+        ? "⚠️ OAuth Key Expired!\nPlease re-login manually to get a new SK_OAUTH_CRED_KEY:\n\nhttps://game.skport.com/endfield/sign-in\n\nScript: https://github.com/NatsumeAoii/skport-auto-signin/blob/main/src/getToken.js"
         : msg;
       var isOk = !isExpired && json.message === "OK";
 
@@ -333,14 +332,15 @@ function buildTelegramHtml(results) {
 
 function postTelegram(results) {
   var tgToken = resolveSecret(telegramBotToken);
-  if (!tgToken || !myTelegramID) return;
+  var tgChatId = resolveSecret(myTelegramID);
+  if (!tgToken || !tgChatId) return;
 
   try {
     UrlFetchApp.fetch("https://api.telegram.org/bot" + tgToken + "/sendMessage", {
       method: "post",
       contentType: "application/json",
       payload: JSON.stringify({
-        chat_id: myTelegramID,
+        chat_id: tgChatId,
         text: buildTelegramHtml(results),
         parse_mode: "HTML"
       }),

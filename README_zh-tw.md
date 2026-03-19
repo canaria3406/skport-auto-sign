@@ -9,193 +9,190 @@
     <br><b>繁體中文</b>　<a href="/README.md">English</a>　<a href="/README_ru.md">Русский</a>
 </p>
 
-穩定且免費的 skport自動簽到script，每月約可自動領取260石，堪比蚊子腿。  
-支援 明日方舟：終末地 。支援多帳號。
+穩定、安全且免費的腳本，自動領取 SKPORT 每日簽到獎勵。
+支援 **明日方舟：終末地**。支援多帳號。
 
 ## 特色
-* **穩定** - 僅需少量的設定即可運作，程式碼僅90行
-* **安全** - 自行部屬至Google Apps Script，不必擔心資料外洩的問題
-* **免費** - Google Apps Script目前是免費使用的佛心服務
-* **簡單** - 無須電腦瀏覽器即可自動幫你簽到，並由 Discord 或 Telegram 自動通知
 
-## 配置
-1. 進入[Google Apps Script](https://script.google.com/home/start)，新增專案，名稱可自訂。
-2. 選擇編輯器，貼上程式碼( [main-disc-tele.gs](https://github.com/NatsumeAoii/skport-auto-signin/blob/main/src/main-disc-tele.gs) )，並參考下述說明配置config檔，完成後儲存。
-3. 在上方選擇 "main"、點選上方的[**執行**]，並授予權限，確認配置是否正確(開始執行>執行完畢)。
+- **穩定** — 僅需最少設定。推薦版本包含重試機制、自動刷新 Token 及執行時間控制。
+- **安全** — 自行部署至您的 Google Apps Script 專案，憑證不會離開您的 Google 帳戶。
+- **免費** — Google Apps Script 是 Google 提供的免費服務。
+- **簡單** — 在伺服器端運行，無需瀏覽器。自動透過 Discord 和/或 Telegram 發送結果。
 
-   ![image](https://github.com/NatsumeAoii/skport-auto-signin/blob/main/pic/02.png)
+## 快速開始
 
-4. 在左側選擇觸發條件，新增觸發條件
+### 1. 建立 Google Apps Script 專案
 
-   ![image](https://github.com/NatsumeAoii/skport-auto-signin/blob/main/pic/03.png)
-   ![image](https://github.com/NatsumeAoii/skport-auto-signin/blob/main/pic/04.png)
+前往 [Google Apps Script](https://script.google.com/home/start)，建立新專案（名稱自訂）。
 
-   選擇您要執行的功能: main
-   選取活動來源: 時間驅動
-   選取時間型觸發條件類型: 日計時器
-   選取時段: 自行選擇，建議選擇0900~1500之離峰任意時段
+### 2. 貼上腳本
 
-   ![image](https://github.com/NatsumeAoii/skport-auto-signin/blob/main/pic/05.png)
+開啟編輯器（Code.gs），將內容替換為
+[`src/main-disc-tele.gs`](https://github.com/NatsumeAoii/skport-auto-signin/blob/main/src/main-disc-tele.gs) 的程式碼。
 
-## config檔設定
+> 這是推薦使用的腳本。它同時支援 Discord 和 Telegram 通知、
+> 自動刷新 Token、指數退避重試機制，以及執行時間限制。
+
+### 3. 設定配置
+
+編輯腳本頂部的 `profiles` 陣列與通知設定。
+詳情請參閱下方的[配置說明](#配置說明)。
+
+### 4. 手動執行一次
+
+從函式下拉選單中選擇 `main`，然後點擊 **執行**。
+在出現提示時授予所需權限。確認執行記錄顯示 `開始執行 > 執行完畢`。
+
+![執行腳本](https://github.com/NatsumeAoii/skport-auto-signin/blob/main/pic/02.png)
+
+### 5. 設定每日觸發條件
+
+點擊左側的 **觸發條件**（時鐘圖示），然後點擊 **新增觸發條件**：
+
+![觸發條件選單](https://github.com/NatsumeAoii/skport-auto-signin/blob/main/pic/03.png)
+![新增觸發條件](https://github.com/NatsumeAoii/skport-auto-signin/blob/main/pic/04.png)
+
+| 設定 | 值 |
+|------|-----|
+| 選擇您要執行的功能 | `main` |
+| 選取活動來源 | 時間驅動 |
+| 選取時間型觸發條件類型 | 日計時器 |
+| 選取時段 | 選擇離峰時段（建議 09:00–15:00） |
+
+![觸發條件設定](https://github.com/NatsumeAoii/skport-auto-signin/blob/main/pic/05.png)
+
+> **替代方式：** 在編輯器中執行 `setupDailyTrigger()` 函式一次，即可取代手動設定觸發條件。它會在每日 09:00 為 `main` 建立觸發條件。
+
+## 配置說明
 
 ```javascript
 const profiles = [
   {
-    SK_OAUTH_CRED_KEY: "", // your skport SK_OAUTH_CRED_KEY in cookie
-    SK_TOKEN_CACHE_KEY: "", // [選填] 請保持空白！程式將自動獲取並更新此 Token。
-    id: "", // your Endfield game id
-    server: "2", // Asia=2 Americas/Europe=3
-    language: "en", // english=en 日本語=ja 繁體中文=zh_Hant 简体中文=zh_Hans 한국어=ko Русский=ru_RU
-    accountName: "YOUR NICKNAME"
+    SK_OAUTH_CRED_KEY: "",   // 必填 — 您的 SKPORT OAuth 憑證（來自 cookie）
+    SK_TOKEN_CACHE_KEY: "",  // 選填 — 保持空白；腳本會自動取得
+    id: "",                  // 必填 — 您的明日方舟：終末地遊戲 ID（數字）
+    server: "2",             // 必填 — 亞洲 = "2"，美洲/歐洲 = "3"
+    language: "en",          // 選填 — en | ja | zh_Hant | zh_Hans | ko | ru_RU
+    accountName: ""          // 必填 — 通知訊息中顯示的暱稱
   }
 ];
 
-// Discord notification config
+// Discord 通知設定
 const discord_notify = true;
-const myDiscordID = "";
-const discordWebhook = "";
+const discordWebhook = "";    // 您的 Discord 頻道 Webhook URL
 
-// Telegram notification config
+// Telegram 通知設定
 const telegram_notify = false;
-const myTelegramID = "";
-const telegramBotToken = "";
+const myTelegramID = "";      // 您的 Telegram 使用者 ID
+const telegramBotToken = "";  // 您的 Telegram 機器人 Token
 
-// Display config
+// 顯示設定（選填）
 const botDisplayName = "Arknights Endfield Auto Sign-In";
 const botAvatarUrl = "https://i.imgur.com/TguAOiA.png";
 const embedTitle = "Endfield Daily Check-In";
 ```
 
+> 至少需要完整設定一個通知頻道（Discord 或 Telegram）。若兩者都未設定，腳本將提前結束。
+
+### 取得 SK_OAUTH_CRED_KEY
+
+1. 開啟 [SKPORT 簽到頁面](https://game.skport.com/endfield/sign-in) 並登入。
+2. 開啟瀏覽器開發者工具主控台（F12 → Console 分頁）。
+3. 貼上並執行 [`src/getToken.js`](https://github.com/NatsumeAoii/skport-auto-signin/blob/main/src/getToken.js) 的內容。
+4. 憑證將被複製到剪貼簿（若剪貼簿存取被拒絕，則會顯示在對話框中）。
+5. 將該值貼入腳本中的 `SK_OAUTH_CRED_KEY` 欄位。
+
+> **安全提醒：** 請將 `SK_OAUTH_CRED_KEY` 視為密碼。切勿將其提交至公開的儲存庫。
+> 為了更高的安全性，您可以將憑證儲存在 GAS 的 **Script Properties** 中，並使用
+> `prop:` 前綴來引用它們（例如 `SK_OAUTH_CRED_KEY: "prop:MY_CRED"`）。腳本會透過
+> `PropertiesService` 自動解析。
+
 <details>
-<summary><b>SKPORT 設定</b></summary>
+<summary><b>Profile 欄位參考</b></summary>
 
-1. **SK_OAUTH_CRED_KEY** - 請填入SKPORT簽到頁面的 cred  
-2. **SK_TOKEN_CACHE_KEY** - [選填] **請保持空白！** 程式現在會使用您的 `SK_OAUTH_CRED_KEY` 在背景自動獲取並刷新此 Token。  
+| 欄位 | 必填 | 說明 |
+|------|------|------|
+| `SK_OAUTH_CRED_KEY` | 是 | 來自 SKPORT cookie 的 OAuth 憑證。透過 `getToken.js` 取得。 |
+| `SK_TOKEN_CACHE_KEY` | 否 | 保持空白。腳本會使用您的 OAuth 憑證自動取得並刷新此 Token。 |
+| `id` | 是 | 您的明日方舟：終末地遊戲玩家 ID（數字）。 |
+| `server` | 是 | `"2"` 為亞洲，`"3"` 為美洲/歐洲。 |
+| `language` | 否 | 顯示語言：`en`、`ja`、`zh_Hant`、`zh_Hans`、`ko`、`ru_RU`。預設為 `en`。 |
+| `accountName` | 是 | 在通知訊息中顯示的暱稱。 |
 
-   欲取得授權密碼，請進入[SKPORT簽到頁面](https://game.skport.com/endfield/sign-in)後，按F12進入console，
-   貼上以下程式碼後執行即可取得cred，複製cred並填入"括號內"。
-   ```javascript
-   function getCookie(name) {
-   const value = `; ${document.cookie}`;
-   const parts = value.split(`; ${name}=`);
-   if (parts.length === 2) return parts.pop().split(';').shift();
-   }
-
-   let cred = 'Error';
-   if (document.cookie.includes('SK_OAUTH_CRED_KEY=')) {
-   cred = `${getCookie('SK_OAUTH_CRED_KEY')}`;
-   }
-
-   let ask = confirm(cred + '\n\nPress enter, then paste the token into your Google Apps Script Project');
-   let msg = ask ? cred : 'Cancel';
-   console.log('SK_OAUTH_CRED_KEY:');
-   console.log(msg);
-
-   let token = 'Error';
-   if (localStorage.getItem('SK_TOKEN_CACHE_KEY')) {
-   token = localStorage.getItem('SK_TOKEN_CACHE_KEY');
-   }
-
-   let ask2 = confirm(token + '\n\nPress enter, then paste the token into your Google Apps Script Project');
-   let msg2 = ask2 ? token : 'Cancel';
-   console.log('SK_TOKEN_CACHE_KEY:');
-   console.log(msg2);
-   ```
-
-3. **id**
-
-   請在此輸入您的明日方舟：終末地遊戲ID。
-   (應為數字)
-
-4. **server**
-
-   請在此輸入您的明日方舟：終末地遊戲伺服器。
-   若您在亞洲伺服器，請輸入 `2`，
-   若您在美洲/歐洲伺服器，請輸入 `3`。
-
-5. **language**
-
-   請在此輸入您的明日方舟：終末地遊戲語言。
-   若您使用英文，請輸入 `en`，
-   若您使用日文，請輸入 `ja`，
-   若您使用繁體中文，請輸入 `zh_Hant`，
-   若您使用簡體中文，請輸入 `zh_Hans`，
-   若您使用韓文，請輸入 `ko`，
-   若您使用俄文，請輸入 `ru_RU`。
-
-6. **accountName** - 請輸入您的自訂暱稱
-
-   請在此輸入您的自訂SKPORT或遊戲內暱稱。
+**多帳號：** 在 `profiles` 陣列中新增額外的物件即可。
 
 </details>
 
 <details>
 <summary><b>Discord 通知設定</b></summary>
 
-```javascript
-const discord_notify = true
-const myDiscordID = "20000080000000040"
-const discordWebhook = "https://discord.com/api/webhooks/1050000000000000060/6aXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXnB"
-```
-
-1. **discord_notify**
-
-   是否要進行Discord的自動簽到通知。
-   若要進行自動簽到通知則為true，若不要請填入false。
-
-2. **myDiscordID** - 請填入自己的 Discord ID
-
-   如果希望在執行失敗時被tag，請填入自己的 Discord ID。
-   你的 Discord ID 看起來會像`23456789012345678`，複製ID並填入"括號內"即可。
-   Discord ID 取得方法可參考[此篇文章](https://support.discord.com/hc/en-us/articles/206346498)。
-   若您不希望被tag，請讓"括號內"保持空白。
-
-3. **discordWebhook** - 請填入發送通知的伺服器頻道之 Discord Webhook
-
-   Discord Webhook 建立方式可參考[此篇文章](https://support.discord.com/hc/en-us/articles/228383668)。
-   當你建立 Discord Webhook 後，您會取得 Discord Webhook 網址，看起來會像`https://discord.com/api/webhooks/1234567890987654321/PekopekoPekopekoPekopeko06f810494a4dbf07b726924a5f60659f09edcaa1`。
-   複製 Webhook 網址 並填入"括號內"即可。
+1. 將 `discord_notify` 設為 `true`。
+2. **discordWebhook** — 為要接收通知的頻道[建立 Webhook](https://support.discord.com/hc/en-us/articles/228383668)。
 
 </details>
 
 <details>
 <summary><b>Telegram 通知設定</b></summary>
 
-```javascript
-const telegram_notify = true
-const myTelegramID = "1XXXXXXX0"
-const telegramBotToken = "6XXXXXXXXX:AAAAAAAAAAXXXXXXXXXX8888888888Peko"
-```
-
-1. **telegram_notify**
-
-   是否要進行Telegram的自動簽到通知。若要進行自動簽到通知則為true，若不要請填入false。
-
-2. **myTelegramID** - 請填入您的 Telegram ID.
-
-   向 [@IDBot](https://t.me/myidbot) 傳送 `/getid` 指令以取得您的 Telegram ID，
-   你的 Telegram ID 看起來會像`123456780`，複製並填入"括號內"即可。
-
-3. **telegramBotToken** - 請填入您的 Telegram Bot Token.
-
-   向 [@BotFather](https://t.me/botfather) 傳送 `/newbot` 指令以建立新的 Telegram Bot。
-   當你建立 Telegram Bot 後，您會取得 Telegram Bot Token，看起來會像`110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw`。
-   複製Token並填入"括號內"即可。
-   你可以參考[此篇文章](https://core.telegram.org/bots/features#botfather)以獲得更詳細的說明。
+1. 將 `telegram_notify` 設為 `true`。
+2. **myTelegramID** — 向 [@IDBot](https://t.me/myidbot) 傳送 `/getid` 以取得您的數字 Telegram ID。
+3. **telegramBotToken** — 向 [@BotFather](https://t.me/botfather) 傳送 `/newbot` 以建立機器人並取得 Token。[詳細指南](https://core.telegram.org/bots/features#botfather)。
 
 </details>
 
-## Demo
-若自動簽到完成，則傳送 OK  
-若今天已簽到過，則傳送通知。
+## 範例
 
-![image](https://github.com/NatsumeAoii/skport-auto-signin/blob/main/pic/01.png)
+簽到成功會傳送「OK」。若今天已簽到過，則會傳送通知。
 
-## Changelog
-2026-01-29 專案公開  
-2026-02-14 修正錯誤，感謝 Keit(@keit32) 的協助  
-2026-02-23 重大更新：將 Discord 與 Telegram 合併至單一 `main.gs`，實裝 Rich Embed/HTML 格式，新增 `SK_TOKEN_CACHE_KEY` 自動獲取與刷新機制，並支援自動時區轉換。
+![範例截圖](https://github.com/NatsumeAoii/skport-auto-singin/blob/main/pic/01.png)
+
+## 腳本版本
+
+| 檔案 | 狀態 | 說明 |
+|------|------|------|
+| [`main-disc-tele.gs`](src/main-disc-tele.gs) | **推薦** | 統一腳本，支援 Discord + Telegram、自動刷新 Token、重試邏輯、執行時間控制及腳本層級鎖定。 |
+| [`main-discord.gs`](src/main-discord.gs) | 舊版 | 僅 Discord，無自動刷新，無重試。保留供參考。 |
+| [`main-telegram.gs`](src/main-telegram.gs) | 舊版 | 僅 Telegram，無自動刷新，無重試。保留供參考。 |
+| [`getToken.js`](src/getToken.js) | 工具 | 瀏覽器主控台腳本，用於從 SKPORT cookie 中提取 `SK_OAUTH_CRED_KEY`。 |
+
+## 資料夾結構
+
+```
+skport-auto-singin/
+├── pic/                     # 文件中使用的截圖與標誌
+│   ├── logo.svg
+│   └── 01–05.png
+├── src/
+│   ├── main-disc-tele.gs    # 推薦：統一 GAS 腳本
+│   ├── main-discord.gs      # 舊版：僅 Discord
+│   ├── main-telegram.gs     # 舊版：僅 Telegram
+│   └── getToken.js          # 憑證提取工具
+├── README.md                # 英文文件
+├── README_zh-tw.md          # 繁體中文文件
+├── README_ru.md             # 俄文文件
+└── LICENSE                  # MIT
+```
+
+## 疑難排解
+
+| 症狀 | 原因 | 解決方式 |
+|------|------|----------|
+| 「User is not logged in」或「OAuth Key Expired」 | `SK_OAUTH_CRED_KEY` 已過期。 | 重新登入[簽到頁面](https://game.skport.com/endfield/sign-in)，再次執行 `getToken.js` 取得新的憑證。 |
+| 「Token expired」（代碼 10000）但自動刷新失敗 | Token 與 OAuth 憑證皆已過期。 | 同上 — 重新取得 `SK_OAUTH_CRED_KEY`。 |
+| 未收到通知 | 通知頻道未完整設定。 | 確認至少一個頻道的旗標為 `true`，且所有必填欄位（Webhook URL 或 Bot Token + Chat ID）皆已填入。 |
+| 「Another instance is running」 | 前次執行仍在進行中，或鎖定未被釋放。 | 等待幾分鐘。GAS 腳本鎖定會自動過期。 |
+| 觸發條件未執行 | 觸發條件設定錯誤或 GAS 配額已用盡。 | 確認觸發條件面板中存在觸發條件。檢查 GAS [配額](https://developers.google.com/apps-script/guides/services/quotas)。 |
+
+## 更新紀錄
+
+- **2026-02-23** — 重大更新：將 Discord 與 Telegram 合併至 `main-disc-tele.gs`，實裝 Rich Embed/HTML 格式化，新增 `SK_TOKEN_CACHE_KEY` 自動取得與刷新機制，支援在地化時間戳。
+- **2026-02-14** — 修正錯誤。感謝 Keit (@keit32) 的協助。
+- **2026-01-29** — 專案上線。
 
 ## 鳴謝
-* **[canaria](https://github.com/canaria3406)** - Skport Auto Sign-In 腳本的原作者。
+
+- **[canaria](https://github.com/canaria3406)** — Skport Auto Sign-In 腳本的原作者。
+
+## 授權條款
+
+[MIT](LICENSE)
