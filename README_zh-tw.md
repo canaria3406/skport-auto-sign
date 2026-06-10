@@ -9,11 +9,11 @@
     <br><b>繁體中文</b>　<a href="/README.md">English</a>　<a href="/README_ru.md">Русский</a>
 </p>
 
-skport自動簽到script，每月約可自動領取260石，堪比蚊子腿。  
-支援 明日方舟：終末地 。支援多帳號。
+skport自動簽到script，每月約可自動領取260石（終末地）/ 200 石（明日方舟），堪比蚊子腿。  
+支援 明日方舟（繁中服）、明日方舟：終末地 。支援多帳號。
 
 ## 特色
-* **輕巧** - 僅需少量的設定即可運作，程式碼僅90行
+* **輕巧** - 僅需少量的設定即可運作，程式碼約250行
 * **安全** - 自行部屬至Google Apps Script，不必擔心資料外洩的問題
 * **免費** - Google Apps Script目前是免費使用的佛心服務
 * **簡單** - 無須電腦瀏覽器即可自動幫你簽到，並由 Discord 或 Telegram 自動通知
@@ -33,12 +33,10 @@ skport自動簽到script，每月約可自動領取260石，堪比蚊子腿。
 ```javascript
 const profiles = [
   {
-    SK_OAUTH_CRED_KEY: "", // your skport SK_OAUTH_CRED_KEY in cookie
-    SK_TOKEN_CACHE_KEY: "", // your SK_TOKEN_CACHE_KEY in localStorage
-    id: "", // your Endfield game id
-    server: "2", // Asia=2 Americas/Europe=3
-    language: "en", // english=en 日本語=ja 繁體中文=zh_Hant 简体中文=zh_Hans 한국어=ko Русский=ru_RU
-    accountName: "YOUR NICKNAME"
+    account_token: "", // your skport account_token in cookie store
+    arknights: true,
+    endfield: true,
+    language: "en" // english=en 日本語=ja 繁體中文=zh_Hant 简体中文=zh_Hans 한국어=ko Русский=ru_RU
   }
 ];
 ```
@@ -46,51 +44,27 @@ const profiles = [
 <details>
 <summary><b>SKPORT 設定</b></summary>
 
-1. **SK_OAUTH_CRED_KEY** - 請填入SKPORT簽到頁面的cred  
-2. **SK_TOKEN_CACHE_KEY** - 請填入SKPORT簽到頁面的token  
+1. **account_token** - 請填入您的 Token  
 
-   進入[SKPORT簽到頁面](https://game.skport.com/endfield/sign-in)後，按F12進入console，
-   貼上以下程式碼後執行即可取得cred，複製cred並填入"括號內"。
-   ```javascript
-   function getCookie(name) {
-   const value = `; ${document.cookie}`;
-   const parts = value.split(`; ${name}=`);
-   if (parts.length === 2) return parts.pop().split(';').shift();
-   }
-
-   let cred = 'Error';
-   if (document.cookie.includes('SK_OAUTH_CRED_KEY=')) {
-   cred = `${getCookie('SK_OAUTH_CRED_KEY')}`;
-   }
-
-   let ask = confirm(cred + '\n\nPress enter, then paste the token into your Google Apps Script Project');
-   let msg = ask ? cred : 'Cancel';
-   console.log('SK_OAUTH_CRED_KEY:');
-   console.log(msg);
-
-   let token = 'Error';
-   if (localStorage.getItem('SK_TOKEN_CACHE_KEY')) {
-   token = localStorage.getItem('SK_TOKEN_CACHE_KEY');
-   }
-
-   let ask2 = confirm(token + '\n\nPress enter, then paste the token into your Google Apps Script Project');
-   let msg2 = ask2 ? token : 'Cancel';
-   console.log('SK_TOKEN_CACHE_KEY:');
-   console.log(msg2);
+   前往 [Gryphline Cookie Store API 頁面](https://web-api.gryphline.com/cookie_store/account_token) （請確保您已在同一個瀏覽器登入 Gryphline / SKPORT 帳號）。
+   您會在畫面上看到類似如下的 JSON 字串：
+   ```json
+   {"code":0,"data":{"content":"YourAccountTokenHere"},"msg":""}
    ```
+   請複製 `content` 後方的英數組合（以上述例子即為 `YourAccountTokenHere`），並填入設定檔的 `account_token` "括號內"。
 
-3. **id**
+2. **arknights**
+   
+   是否要進行 **明日方舟** 的自動簽到。若要進行自動簽到則為 `true`，若不要請填入 `false`。
+   腳本將會自動抓取並簽到該帳號下的所有明日方舟角色。
 
-   請在此輸入您的明日方舟：終末地遊戲ID。
-   (應為數字)
+3. **endfield**
 
-4. **server**
+   是否要進行 **明日方舟：終末地** 的自動簽到。若要進行自動簽到則為 `true`，若不要請填入 `false`。
+   腳本預設將會自動抓取並簽到該帳號下的「所有伺服器」角色（例如同時簽到亞服與美服）。
+   若您只想簽到特定伺服器，可以將此欄位改為陣列格式，例如：`endfield: [2]` (僅簽到亞洲伺服器)，或 `endfield: [3]` (僅簽到歐美伺服器)。
 
-   請在此輸入您的明日方舟：終末地遊戲伺服器。
-   若您在亞洲伺服器，請輸入 `2`，
-   若您在美洲/歐洲伺服器，請輸入 `3`。
-
-5. **language**
+4. **language**
 
    請在此輸入您的明日方舟：終末地遊戲語言。
    若您使用英文，請輸入 `en`，
@@ -99,10 +73,6 @@ const profiles = [
    若您使用簡體中文，請輸入 `zh_Hans`，
    若您使用韓文，請輸入 `ko`，
    若您使用俄文，請輸入 `ru_RU`。
-
-6. **accountName** - 請輸入您的自訂暱稱
-
-   請在此輸入您的自訂SKPORT或遊戲內暱稱。
 
 </details>
 

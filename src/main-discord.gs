@@ -1,11 +1,9 @@
 const profiles = [
   {
-    SK_OAUTH_CRED_KEY: "", // your skport SK_OAUTH_CRED_KEY in cookie
-    SK_TOKEN_CACHE_KEY: "", // your SK_TOKEN_CACHE_KEY in localStorage
-    id: "", // your Endfield game id
-    server: "2", // Asia=2 Americas/Europe=3
-    language: "en", // english=en 日本語=ja 繁體中文=zh_Hant 简体中文=zh_Hans 한국어=ko Русский=ru_RU
-    accountName: "YOUR NICKNAME"
+    account_token: "", // your skport account_token in cookie store
+    arknights: true,
+    endfield: true,
+    language: "en" // english=en 日本語=ja 繁體中文=zh_Hant 简体中文=zh_Hans 한국어=ko Русский=ru_RU
   }
 ];
 
@@ -18,6 +16,7 @@ const discordWebhook = ""
 
 const urlDict = {
   Endfield: 'https://zonai.skport.com/web/v1/game/endfield/attendance',
+  Arknights: 'https://zonai.skport.com/api/v1/game/attendance',
 };
 
 const headerDict = {
@@ -58,9 +57,130 @@ function generateSign(path, method, headers, query, body, token) {
   return bytesToHex(Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, hmacHex, Utilities.Charset.UTF_8));
 }
 
+function getAuthData(account_token, arknights_flag, endfield_flag) {
+  let authResult = { success: false, cred: null, token: null, tasks: [], error: null };
+  try {
+    let grantUrl = "https://as.gryphline.com/user/oauth2/v2/grant";
+    let grantPayload = { "token": account_token, "appCode": "6eb76d4e13aa36e6", "type": 0 };
+    let grantOptions = {
+      "method": "post",
+      "contentType": "application/json",
+      "payload": JSON.stringify(grantPayload),
+      "muteHttpExceptions": true
+    };
+    let grantRes = UrlFetchApp.fetch(grantUrl, grantOptions);
+    let grantData = JSON.parse(grantRes.getContentText());
+    if (grantData.status !== 0 || !grantData.data || !grantData.data.code) {
+      authResult.error = "OAuth failed: " + (grantData.msg || grantRes.getContentText());
+      return authResult;
+    }
+    let oauth_token = grantData.data.code;
+
+    let credUrl = "https://zonai.skport.com/api/v1/user/auth/generate_cred_by_code";
+    let credPayload = { "code": oauth_token, "kind": 1 };
+    let credOptions = {
+      "method": "post",
+      "contentType": "application/json",
+      "payload": JSON.stringify(credPayload),
+      "muteHttpExceptions": true
+    };
+    let credRes = UrlFetchApp.fetch(credUrl, credOptions);
+    let credData = JSON.parse(credRes.getContentText());
+    if (credData.code !== 0 || !credData.data || !credData.data.cred) {
+      authResult.error = "Cred generation failed: " + (credData.message || credRes.getContentText());
+      return authResult;
+    }
+    authResult.cred = credData.data.cred;
+    authResult.token = credData.data.token;
+
+    // Refresh token if not provided in cred response
+    if (!authResult.token) {
+      let refreshHeaders = Object.assign({}, headerDict.default, {
+          "cred": authResult.cred,
+          "timestamp": String(Math.floor(Date.now() / 1000)),
+          "sk-language": "en"
+      });
+      let refreshOptions = { method: 'get', headers: refreshHeaders, muteHttpExceptions: true };
+      let refreshRes = UrlFetchApp.fetch("https://zonai.skport.com/api/v1/auth/refresh", refreshOptions);
+      let refreshData = JSON.parse(refreshRes.getContentText());
+      if (refreshData.code === 0 && refreshData.data && refreshData.data.token) {
+          authResult.token = refreshData.data.token;
+      } else {
+          authResult.error = "Token refresh failed: " + refreshRes.getContentText();
+          return authResult;
+      }
+    }
+
+    let bindingUrl = "https://zonai.skport.com/api/v1/game/player/binding";
+    let timestamp = String(Math.floor(Date.now() / 1000));
+    let bindingHeaders = Object.assign({}, headerDict.default, {
+        "cred": authResult.cred,
+        "timestamp": timestamp,
+        "sk-language": "en"
+    });
+    bindingHeaders.sign = generateSign("/api/v1/game/player/binding", "GET", bindingHeaders, "", "", authResult.token);
+    
+    let bindingRes = UrlFetchApp.fetch(bindingUrl, { method: 'get', headers: bindingHeaders, muteHttpExceptions: true });
+    let bindingData = JSON.parse(bindingRes.getContentText());
+    
+    if (bindingData.code === 0 && bindingData.data && bindingData.data.list) {
+      let apps = bindingData.data.list;
+      for (let i = 0; i < apps.length; i++) {
+        let app = apps[i];
+        
+        if (arknights_flag && app.appCode === "arknights" && app.bindingList) {
+          for (let k = 0; k < app.bindingList.length; k++) {
+            let b = app.bindingList[k];
+            authResult.tasks.push({
+              gameName: "Arknights",
+              url: urlDict.Arknights,
+              path: "/api/v1/game/attendance",
+              body: JSON.stringify({ uid: b.uid, gameId: "1" }),
+              role: `1_${b.uid}_1`,
+              nickName: b.nickName
+            });
+          }
+        }
+        
+        if (endfield_flag && app.appCode === "endfield" && app.bindingList) {
+          for (let k = 0; k < app.bindingList.length; k++) {
+            let b = app.bindingList[k];
+            let roles = b.roles || [];
+            for (let j = 0; j < roles.length; j++) {
+              let r = roles[j];
+              if (Array.isArray(endfield_flag) && !endfield_flag.includes(parseInt(r.serverId)) && !endfield_flag.includes(r.serverId)) {
+                continue;
+              }
+              authResult.tasks.push({
+                gameName: "Endfield",
+                url: urlDict.Endfield,
+                path: "/web/v1/game/endfield/attendance",
+                body: "",
+                role: `3_${r.roleId}_${r.serverId}`,
+                nickName: r.nickName + " (" + r.serverName + ")"
+              });
+            }
+          }
+        }
+      }
+    } else {
+        authResult.error = "Binding list fetch failed: " + bindingRes.getContentText();
+        return authResult;
+    }
+    
+    authResult.success = true;
+  } catch (e) {
+    authResult.error = "Exception: " + e.message;
+  }
+  return authResult;
+}
+
 async function main() {
-  const messages = profiles.map(autoSignFunction);
-  const skportResp = `${messages.join('\n\n')}`;
+  let finalMessages = [];
+  for (let i = 0; i < profiles.length; i++) {
+    finalMessages.push(autoSignFunction(profiles[i], i + 1));
+  }
+  const skportResp = finalMessages.join('\n\n');
   if (discord_notify && discordWebhook) {
     postWebhook(skportResp);
   }
@@ -70,31 +190,57 @@ function discordPing() {
   return myDiscordID ? `<@${myDiscordID}> ` : '';
 }
 
-function autoSignFunction({ SK_OAUTH_CRED_KEY, SK_TOKEN_CACHE_KEY, id, server, language = "en", accountName }) {
-  const path = "/web/v1/game/endfield/attendance";
-  const timestamp = String(Math.floor(Date.now() / 1000));
+function autoSignFunction(profile, index) {
+  const account_token = profile.account_token;
+  const arknights = profile.arknights || false;
+  const endfield = profile.endfield || false;
+  const language = profile.language || "en";
+  
+  if (!account_token) return `Profile ${index}: No account_token provided.`;
+  if (!arknights && !endfield) return `Profile ${index}: No games selected.`;
 
-  const headers = {
-    ...headerDict.default,
-    cred: SK_OAUTH_CRED_KEY,
-    "sk-game-role": `3_${id}_${server}`,
-    "sk-language": language,
-    timestamp,
-  };
-  headers.sign = generateSign(path, 'POST', headers, '', '', SK_TOKEN_CACHE_KEY);
-
-  const httpResponse = UrlFetchApp.fetch(urlDict.Endfield, { method: 'POST', headers, muteHttpExceptions: true });
-  const responseJson = JSON.parse(httpResponse.getContentText());
-
-  let response = `Check-in completed for ${accountName}`;
-  if (responseJson.code === 10000) {
-    response += `\nEndfield: ${discordPing()}⚠️ Token expired! \nPlease update SK_TOKEN_CACHE_KEY in your config.`;
-  } else {
-    const isError = responseJson.message !== "OK";
-    response += `\nEndfield: ${isError ? discordPing() : ''}${responseJson.message}`;
+  const authData = getAuthData(account_token, arknights, endfield);
+  if (!authData.success) {
+    return `Profile ${index}: ${discordPing()}Auth Failed! ${authData.error}`;
+  }
+  if (authData.tasks.length === 0) {
+    return `Profile ${index}: No characters found for selected games.`;
   }
 
-  return response;
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  let responseLines = [`Profile ${index} Check-in completed:`];
+
+  for (const req of authData.tasks) {
+    const headers = {
+      ...headerDict.default,
+      cred: authData.cred,
+      "sk-game-role": req.role,
+      "sk-language": language,
+      timestamp,
+    };
+    headers.sign = generateSign(req.path, 'POST', headers, '', req.body, authData.token);
+
+    const options = {
+      method: 'POST',
+      headers: headers,
+      muteHttpExceptions: true
+    };
+    if (req.body) {
+      options.payload = req.body;
+    }
+
+    const httpResponse = UrlFetchApp.fetch(req.url, options);
+    const responseJson = JSON.parse(httpResponse.getContentText());
+
+    if (responseJson.code === 10000) {
+      responseLines.push(`[${req.gameName}] ${req.nickName}: ${discordPing()}⚠️ Token error/expired!`);
+    } else {
+      const isError = responseJson.message !== "OK";
+      responseLines.push(`[${req.gameName}] ${req.nickName}: ${isError ? discordPing() : ''}${responseJson.message}`);
+    }
+  }
+
+  return responseLines.join('\n');
 }
 
 function postWebhook(data) {
